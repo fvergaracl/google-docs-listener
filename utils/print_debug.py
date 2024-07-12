@@ -1,4 +1,6 @@
-from colorama import Fore, Style
+from colorama import Fore
+import json
+
 
 def print_debug(message, level="info", is_json=False):
     if is_json:
