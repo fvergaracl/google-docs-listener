@@ -1,0 +1,25 @@
+[tool.poetry]
+name = "google-doc-listener"
+version = "0.1.0"
+description = ""
+authors = ["fvergaracl <fvergaracl@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+google-api-python-client = "^2.36.0"
+google-auth = "^2.6.6"
+google-auth-oauthlib = "^0.4.6"
+python-dotenv = "^0.20.0"
+google-auth-httplib2 = "^0.2.0"
+spacy = "^3.7.5"
+scikit-learn = "^1.5.1"
+colorama = "^0.4.6"
+
+[tool.poetry.group.dev.dependencies]
+pylint = "^3.2.5"
+black = "^24.4.2"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
