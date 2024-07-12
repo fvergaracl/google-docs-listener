@@ -15,7 +15,8 @@ load_dotenv()
 
 def get_credentials(attempts=1):
     """
-    Retrieves OAuth2 credentials for Google APIs. Tries a specified number of attempts before failing.
+    Retrieves OAuth2 credentials for Google APIs. Tries a specified number of
+      attempts before failing.
 
     Args:
         attempts (int): Number of attempts to obtain credentials.
@@ -120,7 +121,8 @@ def get_only_added_lines(diff):
 
 def apply_markdown(text_run):
     """
-    Applies Markdown formatting based on the text style attributes of a text run.
+    Applies Markdown formatting based on the text style attributes of a text
+      run.
 
     Args:
         text_run (dict): The text run dictionary containing content and style.
@@ -159,10 +161,12 @@ def extract_topics_and_answers(document):
     Extracts topics and corresponding answers from a Google Docs document.
 
     Args:
-        document (dict): The document data as retrieved from the Google Docs API.
+        document (dict): The document data as retrieved from the Google Docs
+          API.
 
     Returns:
-        list: A list of dictionaries, each containing a topic, description, and answer.
+        list: A list of dictionaries, each containing a topic, description,
+          and answer.
     """
     topics_and_answers = []
     current_topic = None
@@ -242,7 +246,8 @@ def extract_topics_and_answers(document):
 
 def listen_for_changes(document_id=os.getenv('GOOGLE_DOCUMENT_ID')):
     """
-    Listens for changes in a Google Docs document and processes revisions accordingly.
+    Listens for changes in a Google Docs document and processes revisions
+      accordingly.
 
     Args:
         document_id (str): The ID of the Google Docs document to monitor.
