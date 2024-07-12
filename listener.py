@@ -14,6 +14,15 @@ load_dotenv()
 
 
 def get_credentials(attempts=1):
+    """
+    Retrieves OAuth2 credentials for Google APIs. Tries a specified number of attempts before failing.
+
+    Args:
+        attempts (int): Number of attempts to obtain credentials.
+
+    Returns:
+        Credentials: OAuth2 credentials object if successful, None otherwise.
+    """
     if attempts >= 3:
         message = (
             f"Se ha excedido el número máximo de intentos para obtener "
@@ -45,6 +54,16 @@ def get_credentials(attempts=1):
 
 
 def get_document_content(docs_service, document_id):
+    """
+    Fetches the content of a Google Docs document.
+
+    Args:
+        docs_service (Resource): Google Docs API service instance.
+        document_id (str): The ID of the document to fetch content from.
+
+    Returns:
+        str: The plain text content of the document.
+    """
     document = docs_service.documents().get(documentId=document_id).execute()
     content = ''
     for element in document.get('body', {}).get('content', []):
@@ -56,6 +75,12 @@ def get_document_content(docs_service, document_id):
 
 
 def print_revision_info(revision_info):
+    """
+    Prints detailed information about a specific document revision.
+
+    Args:
+        revision_info (dict): Dictionary containing revision information.
+    """
     print(f"ID de revisión: {revision_info['id']}")
     print(
         f"Modificado por: {revision_info['lastModifyingUser'].get('displayName', 'Desconocido')}")
@@ -65,12 +90,44 @@ def print_revision_info(revision_info):
 
 
 def compare_revisions(old_content, new_content):
+    """
+    Compares two versions of document content and returns the differences.
+
+    Args:
+        old_content (str): The original document content.
+        new_content (str): The new document content.
+
+    Returns:
+        str: A string showing the differences between the old and new content.
+    """
     diff = ndiff(old_content.splitlines(keepends=True),
                  new_content.splitlines(keepends=True))
     return ''.join(diff)
 
 
+def get_only_added_lines(diff):
+    """
+    Extracts only the added lines from a diff string.
+
+    Args:
+        diff (str): The diff string to process.
+
+    Returns:
+        list: A list of strings representing the added lines.
+    """
+    return [line[2:] for line in diff if line.startswith('+ ')]
+
+
 def apply_markdown(text_run):
+    """
+    Applies Markdown formatting based on the text style attributes of a text run.
+
+    Args:
+        text_run (dict): The text run dictionary containing content and style.
+
+    Returns:
+        str: The formatted text content.
+    """
     content = text_run.get("content", "")
     text_style = text_run.get("textStyle", {})
 
@@ -85,10 +142,28 @@ def apply_markdown(text_run):
 
 
 def escape_markdown_special_chars(content):
+    """
+    Escapes special characters used in Markdown formatting.
+
+    Args:
+        content (str): The text content to escape.
+
+    Returns:
+        str: The escaped text content.
+    """
     return content.replace('*', '\\*').replace('_', '\\_')
 
 
 def extract_topics_and_answers(document):
+    """
+    Extracts topics and corresponding answers from a Google Docs document.
+
+    Args:
+        document (dict): The document data as retrieved from the Google Docs API.
+
+    Returns:
+        list: A list of dictionaries, each containing a topic, description, and answer.
+    """
     topics_and_answers = []
     current_topic = None
 
@@ -166,7 +241,12 @@ def extract_topics_and_answers(document):
 
 
 def listen_for_changes(document_id=os.getenv('GOOGLE_DOCUMENT_ID')):
-    # save DOCUMENT_ID as global variable
+    """
+    Listens for changes in a Google Docs document and processes revisions accordingly.
+
+    Args:
+        document_id (str): The ID of the Google Docs document to monitor.
+    """
     global DOCUMENT_ID
     DOCUMENT_ID = document_id
 
@@ -212,13 +292,17 @@ def listen_for_changes(document_id=os.getenv('GOOGLE_DOCUMENT_ID')):
 
                 print("Cambios realizados:")
                 print(delta)
-
+                for item in tasks_and_responses:
+                    print(f"Tópico: {item['topic']}")
+                    print(f"Descripción: {item['description']}")
+                    print(f"Respuesta: {item['answer']}")
+                    print(" ")
                 # Evaluar la contribución delta
                 task_description = """Create a detailed action plan for the prevention, detection, and mitigation of fires in a specific region.
                 The plan should include preventive measures, detection systems, mitigation strategies, resource identification, and risk assessment."""
-                contributions = [delta]
+                only_added_content = get_only_added_lines(delta)
                 evaluation_results = evaluate_contributions(
-                    task_description, contributions)
+                    task_description, only_added_content)
                 print(
                     f"Evaluación de la contribución: {evaluation_results[0][1]:.2f}")
 
