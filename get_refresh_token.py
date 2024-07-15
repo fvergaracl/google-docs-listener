@@ -1,6 +1,7 @@
 import os
 import json
 from google_auth_oauthlib.flow import InstalledAppFlow
+from utils.print_debug import print_debug
 
 
 def get_refresh_token():
@@ -31,7 +32,7 @@ def get_refresh_token():
     creds = flow.run_local_server(port=0)
 
     # Imprimir el refresh token
-    print("Refresh Token:", creds.refresh_token)
+    print_debug("Refresh Token:", creds.refresh_token)
 
     # save refresh_token as temporal environment variable
     os.environ["GOOGLE_REFRESH_TOKEN"] = creds.refresh_token

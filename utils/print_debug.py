@@ -3,6 +3,18 @@ import json
 
 
 def print_debug(message, level="info", is_json=False):
+    """
+    Print a message with a specific level
+
+    Args:
+        message (str): The message to print.
+        level (str): The level of the message. Default is "info".
+        is_json (bool): If True, the message will be pretty printed as JSON. Default is False.
+
+    Returns:
+        None
+
+    """
     if is_json:
         message = json.dumps(message, indent=4, ensure_ascii=False)
 

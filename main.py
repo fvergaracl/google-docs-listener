@@ -1,3 +1,7 @@
+"""
+Start the application
+"""
+
 import os
 import json
 from get_refresh_token import get_refresh_token
@@ -8,9 +12,11 @@ init(autoreset=True)
 
 if __name__ == "__main__":
     DOCUMENT_ID = os.getenv('GOOGLE_DOCUMENT_ID')
-    # read token.json if exist , get "refresh_token" from it and save it as environment variable os ('GOOGLE_REFRESH_TOKEN')
+    if DOCUMENT_ID is None:
+        raise ValueError(
+            'GOOGLE_DOCUMENT_ID is not set in environment variables')
     if os.path.exists('token.json'):
-        with open('token.json', 'r') as token_file:
+        with open('token.json', 'r', encoding='utf-8') as token_file:
             token = json.load(token_file)
             os.environ['GOOGLE_REFRESH_TOKEN'] = token['refresh_token']
     else:

@@ -1,13 +1,14 @@
 import os
 import time
-from utils.print_debug import print_debug
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 from get_refresh_token import get_refresh_token
 from dotenv import load_dotenv
-from difflib import ndiff
-from contribution_evaluation import evaluate_contributions  # Import the function
+from contribution_evaluation import evaluate_contributions
+from utils import (print_debug, get_color_from_env,
+                   compare_revisions, get_only_added_lines)
+
 load_dotenv()
 
 # Cargar variables de entorno
@@ -82,41 +83,16 @@ def print_revision_info(revision_info):
     Args:
         revision_info (dict): Dictionary containing revision information.
     """
-    print(f"ID de revisión: {revision_info['id']}")
-    print(
-        f"Modificado por: {revision_info['lastModifyingUser'].get('displayName', 'Desconocido')}")
-    print(f"Fecha de modificación: {revision_info['modifiedTime']}")
-    print(f"Links de exportación: {revision_info.get('exportLinks', {})}")
-    print(f"Publicado: {revision_info.get('published', False)}")
+    print_debug(f"ID de revisión: {revision_info['id']}")
+    modified_msg = (
+        f"Modificado por: {revision_info['lastModifyingUser'].get('displayName', 'Desconocido')}"  # noqa
+    )
 
-
-def compare_revisions(old_content, new_content):
-    """
-    Compares two versions of document content and returns the differences.
-
-    Args:
-        old_content (str): The original document content.
-        new_content (str): The new document content.
-
-    Returns:
-        str: A string showing the differences between the old and new content.
-    """
-    diff = ndiff(old_content.splitlines(keepends=True),
-                 new_content.splitlines(keepends=True))
-    return ''.join(diff)
-
-
-def get_only_added_lines(diff):
-    """
-    Extracts only the added lines from a diff string.
-
-    Args:
-        diff (str): The diff string to process.
-
-    Returns:
-        list: A list of strings representing the added lines.
-    """
-    return [line[2:] for line in diff if line.startswith('+ ')]
+    print_debug(modified_msg)
+    print_debug(f"Fecha de modificación: {revision_info['modifiedTime']}")
+    print_debug(
+        f"Links de exportación: {revision_info.get('exportLinks', {})}")
+    print_debug(f"Publicado: {revision_info.get('published', False)}")
 
 
 def apply_markdown(text_run):
@@ -170,14 +146,20 @@ def extract_topics_and_answers(document):
     """
     topics_and_answers = []
     current_topic = None
+    TOPIC_COLOR = get_color_from_env("TOPIC_COLOR")
+    DESCRIPTION_COLOR = get_color_from_env("DESCRIPTION_COLOR")
+    ANSWER_COLOR = get_color_from_env("ANSWER_COLOR")
 
-    # Iterar a través del contenido del cuerpo del documento
+    topics_and_answers = []
+    current_topic = None
+
+    # Iterate through the document body content
     for item in document.get("body", {}).get("content", []):
         paragraph = item.get("paragraph", {})
         paragraph_style = paragraph.get("paragraphStyle", {})
         named_style_type = paragraph_style.get("namedStyleType", "")
 
-        # Verificar si el estilo del párrafo es "HEADING_3"
+        # Check if the paragraph style is "HEADING_3"
         if named_style_type == "HEADING_3":
             for element in paragraph.get("elements", []):
                 text_run = element.get("textRun", {})
@@ -186,14 +168,14 @@ def extract_topics_and_answers(document):
                 background_color = text_style.get("backgroundColor", {}).get(
                     "color", {}).get("rgbColor", {})
 
-                # Verificar si el color de fondo coincide con las condiciones dadas para "topic"
-                if background_color.get("red") == .05882353 and background_color.get("green") == 1 and background_color.get("blue") == .05882353:
+                # Check if the background color matches the topic color
+                if background_color == TOPIC_COLOR:
                     if current_topic:
                         topics_and_answers.append(current_topic)
                     current_topic = {
                         "topic": content.strip(), "description": "", "answer": ""}
 
-        # Agregar contenido a la respuesta o descripción del último topic si cumple las condiciones
+        # Add content to the current topic's description or answer if it matches the conditions
         elif current_topic:
             for element in paragraph.get("elements", []):
                 text_run = element.get("textRun", {})
@@ -202,12 +184,12 @@ def extract_topics_and_answers(document):
                 background_color = text_style.get("backgroundColor", {}).get(
                     "color", {}).get("rgbColor", {})
 
-                # Verificar si el color de fondo coincide con las condiciones dadas para "description"
-                if content and background_color.get("red") == .3019608 and background_color.get("green") == .9137255 and background_color.get("blue") == .9411765:
-                    # Escapar caracteres especiales de Markdown
+                # Check if the background color matches the description color
+                if content and background_color == DESCRIPTION_COLOR:
+                    # Escape special Markdown characters
                     content = escape_markdown_special_chars(content.strip())
 
-                    # Aplicar formato Markdown si es necesario
+                    # Apply Markdown formatting if necessary
                     if text_style.get("bold"):
                         content = f"**{content}**"
                     if text_style.get("underline"):
@@ -217,12 +199,12 @@ def extract_topics_and_answers(document):
 
                     current_topic["description"] += content + " "
 
-                # Verificar si el color de fondo coincide con las condiciones dadas para "answer"
-                elif content and background_color.get("red") == 1 and background_color.get("green") == 1 and background_color.get("blue") == .47058824:
-                    # Escapar caracteres especiales de Markdown
+                # Check if the background color matches the answer color
+                elif content and background_color == ANSWER_COLOR:
+                    # Escape special Markdown characters
                     content = escape_markdown_special_chars(content.strip())
 
-                    # Aplicar formato Markdown si es necesario
+                    # Apply Markdown formatting if necessary
                     if text_style.get("bold"):
                         content = f"**{content}**"
                     if text_style.get("underline"):
@@ -232,11 +214,11 @@ def extract_topics_and_answers(document):
 
                     current_topic["answer"] += content + " "
 
-    # Añadir el último tópico al resultado
+    # Add the last topic to the result
     if current_topic:
         topics_and_answers.append(current_topic)
 
-    # Limpiar espacios extras al final de cada respuesta y descripción
+    # Clean up extra spaces at the end of each description and answer
     for item in topics_and_answers:
         item["description"] = item["description"].strip()
         item["answer"] = item["answer"].strip()
@@ -279,7 +261,7 @@ def listen_for_changes(document_id=os.getenv('GOOGLE_DOCUMENT_ID')):
                 last_content = get_document_content(docs_service, DOCUMENT_ID)
 
             if last_revision != latest_revision:
-                print(
+                print_debug(
                     f"Nuevo cambio detectado en el documento. ID de revisión: {latest_revision}")
                 try:
                     revision_info = drive_service.revisions().get(
@@ -287,7 +269,8 @@ def listen_for_changes(document_id=os.getenv('GOOGLE_DOCUMENT_ID')):
                     print_revision_info(revision_info)
                 except HttpError as error:
                     if error.resp.status == 404:
-                        print(f"Revisión no encontrada: {latest_revision}")
+                        print_debug(
+                            f"Revisión no encontrada: {latest_revision}")
                         continue
                     else:
                         raise
@@ -295,20 +278,20 @@ def listen_for_changes(document_id=os.getenv('GOOGLE_DOCUMENT_ID')):
                 new_content = get_document_content(docs_service, DOCUMENT_ID)
                 delta = compare_revisions(last_content, new_content)
 
-                print("Cambios realizados:")
-                print(delta)
+                print_debug("Cambios realizados:")
+                print_debug(delta)
                 for item in tasks_and_responses:
-                    print(f"Tópico: {item['topic']}")
-                    print(f"Descripción: {item['description']}")
-                    print(f"Respuesta: {item['answer']}")
-                    print(" ")
+                    print_debug(f"Tópico: {item['topic']}")
+                    print_debug(f"Descripción: {item['description']}")
+                    print_debug(f"Respuesta: {item['answer']}")
+                    print_debug(" ")
                 # Evaluar la contribución delta
                 task_description = """Create a detailed action plan for the prevention, detection, and mitigation of fires in a specific region.
                 The plan should include preventive measures, detection systems, mitigation strategies, resource identification, and risk assessment."""
                 only_added_content = get_only_added_lines(delta)
                 evaluation_results = evaluate_contributions(
                     task_description, only_added_content)
-                print(
+                print_debug(
                     f"Evaluación de la contribución: {evaluation_results[0][1]:.2f}")
 
                 last_revision = latest_revision
@@ -317,7 +300,7 @@ def listen_for_changes(document_id=os.getenv('GOOGLE_DOCUMENT_ID')):
             time.sleep(10)
 
     except HttpError as error:
-        print(f"Ha ocurrido un error: {error}")
+        print_debug(f"Ha ocurrido un error: {error}")
 
 
 if __name__ == "__main__":
