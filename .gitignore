@@ -2,3 +2,7 @@ token.json
 .env
 *.pyc
 __pycache__/
+utils/__pycache__/
+__pycache__/*
+**/__pycache__
+**/__pycache__/*

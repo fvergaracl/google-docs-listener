@@ -15,6 +15,7 @@ google-auth-httplib2 = "^0.2.0"
 spacy = "3.7.5"
 scikit-learn = "^1.5.1"
 colorama = "^0.4.6"
+watchdog = "^4.0.1"
 
 [tool.poetry.group.dev.dependencies]
 pylint = "^3.2.5"
