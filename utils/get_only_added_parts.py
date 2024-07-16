@@ -17,23 +17,18 @@ def get_only_added_parts(old_text, new_text):
     new_text = "yESTOESUNA PRUEBA"
     return ["y", "UNA PRUEBA"]
     """
-    diff = ndiff(old_text.splitlines(keepends=True),
-                 new_text.splitlines(keepends=True))
-    added_parts = []
-    current_part = []
-    for line in diff:
-        if line.startswith('- '):
-            if current_part:
-                added_parts.append(''.join(current_part).strip())
-                current_part = []
-        elif line.startswith('+ '):
-            current_part.append(line[2:])
-        else:
-            if current_part:
-                added_parts.append(''.join(current_part).strip())
-                current_part = []
-
-    if current_part:
-        added_parts.append(''.join(current_part).strip())
-
-    return added_parts
+    diff = ndiff(old_text, new_text)
+    added = []
+    current_addition = []
+    
+    for x in diff:
+        if x.startswith('+ '):
+            current_addition.append(x[2:])
+        elif current_addition:
+            added.append(''.join(current_addition))
+            current_addition = []
+    
+    if current_addition:
+        added.append(''.join(current_addition))
+    
+    return added
