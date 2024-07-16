@@ -86,3 +86,14 @@ This project uses the following libraries and APIs:
 - [colorama](https://pypi.org/project/colorama/)
 
 For more information, please refer to the official documentation of these libraries and APIs.
+
+# Issues
+
+```
+OSError: [E050] Can't find model 'es_core_news_md'. It doesn't seem to be a Python package or a valid path to a data directory.
+```
+
+```Bash
+poetry shell
+python -m spacy download es_core_news_md
+```
