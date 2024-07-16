@@ -1,6 +1,7 @@
 import spacy
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
+from utils import print_debug
 
 # Cargar el modelo de lenguaje de spaCy
 nlp = spacy.load('es_core_news_md')
@@ -14,6 +15,16 @@ def preprocess_text(text):
 
 
 def evaluate_contributions(task_description, contributions):
+    print_debug(" ")
+    print_debug(" ")
+    print_debug('Evaluating contributions...')
+    print_debug(" ")
+    print_debug(f"task_description: {task_description}")
+    print_debug(" ")
+    print_debug(f"contributions: {contributions}")
+    print_debug(" ")
+    print_debug(" ")
+    print_debug('Preprocessing text...')
     # Preprocesar el texto de la tarea y los aportes
     preprocessed_task = preprocess_text(task_description)
     preprocessed_contributions = [preprocess_text(

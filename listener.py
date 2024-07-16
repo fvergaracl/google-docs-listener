@@ -7,7 +7,7 @@ from get_refresh_token import get_refresh_token
 from dotenv import load_dotenv
 from contribution_evaluation import evaluate_contributions
 from utils import (print_debug, get_color_from_env,
-                   compare_revisions, get_only_added_lines)
+                   compare_revisions, get_only_added_parts)
 
 load_dotenv()
 
@@ -253,12 +253,11 @@ def listen_for_changes(document_id=os.getenv('GOOGLE_DOCUMENT_ID')):
             latest_revision = revisions['revisions'][-1]['id']
             print_debug(f"Última revisión: {latest_revision}", level=None)
             print_debug(" ", level=None)
-            tasks_and_responses = extract_topics_and_answers(document)
-            print_debug(tasks_and_responses, level=None, is_json=True)
-
+            new_content = extract_topics_and_answers(document)
+            print_debug(new_content, level=None, is_json=True)
             if last_revision is None:
                 last_revision = latest_revision
-                last_content = get_document_content(docs_service, DOCUMENT_ID)
+                last_content = new_content
 
             if last_revision != latest_revision:
                 print_debug(
@@ -274,26 +273,45 @@ def listen_for_changes(document_id=os.getenv('GOOGLE_DOCUMENT_ID')):
                         continue
                     else:
                         raise
+                # print clear terminal
+                print("\033c")
+                for new_item in new_content:
+                    for old_item in last_content:
+                        if new_item['topic'] == old_item['topic']:
+                            if new_item['description'] != old_item['description']:
+                                print_debug(
+                                    f"Descripción actualizada para el tema: {new_item['topic']}")
+                                print_debug(
+                                    f"Descripción anterior: {old_item['description']}")
+                                print_debug(
+                                    f"Descripción actual: {new_item['description']}")
+                            if new_item['answer'] != old_item['answer']:
+                                print_debug(
+                                    f"Respuesta actualizada para el tema: {new_item['topic']}")
+                                print_debug(
+                                    f"Respuesta anterior: {old_item['answer']}")
+                                print_debug(
+                                    f"Respuesta actual: {new_item['answer']}")
+                                description = f"{new_item['topic']} - {new_item['description']}"
 
-                new_content = get_document_content(docs_service, DOCUMENT_ID)
-                delta = compare_revisions(last_content, new_content)
+                                answer = get_only_added_parts(
+                                    old_item['answer'], new_item['answer'])
+                                added_lines = len(answer)
+                                print_debug(f"Respuesta: {answer}")
+                                print_debug(f"Líneas añadidas: {added_lines}")
+                                print_debug(" ")
+                                print_debug(" ")
+                                print_debug(" ")
+                                print_debug(" ")
+                                print_debug(" ")
+                                print_debug(" ")
+                                print_debug(" ")
+                                print_debug(" ")
 
-                print_debug("Cambios realizados:")
-                print_debug(delta)
-                for item in tasks_and_responses:
-                    print_debug(f"Tópico: {item['topic']}")
-                    print_debug(f"Descripción: {item['description']}")
-                    print_debug(f"Respuesta: {item['answer']}")
-                    print_debug(" ")
-                # Evaluar la contribución delta
-                task_description = """Create a detailed action plan for the prevention, detection, and mitigation of fires in a specific region.
-                The plan should include preventive measures, detection systems, mitigation strategies, resource identification, and risk assessment."""
-                only_added_content = get_only_added_lines(delta)
-                evaluation_results = evaluate_contributions(
-                    task_description, only_added_content)
-                print_debug(
-                    f"Evaluación de la contribución: {evaluation_results[0][1]:.2f}")
-
+                                evaluation = evaluate_contributions(
+                                    description, answer)
+                                print_debug(f"Evaluación: {evaluation}")
+                            break
                 last_revision = latest_revision
                 last_content = new_content
 
