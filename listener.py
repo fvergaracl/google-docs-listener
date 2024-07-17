@@ -292,24 +292,13 @@ def listen_for_changes(document_id=os.getenv('GOOGLE_DOCUMENT_ID')):
                                     f"Respuesta anterior: {old_item['answer']}")
                                 print_debug(
                                     f"Respuesta actual: {new_item['answer']}")
-                                description = f"{new_item['topic']} - {new_item['description']}"
-
+                                topic = new_item['topic']
+                                task_description = new_item['description']
                                 answer = get_only_added_parts(
                                     old_item['answer'], new_item['answer'])
-                                added_lines = len(answer)
-                                print_debug(f"Respuesta: {answer}")
-                                print_debug(f"Líneas añadidas: {added_lines}")
-                                print_debug(" ")
-                                print_debug(" ")
-                                print_debug(" ")
-                                print_debug(" ")
-                                print_debug(" ")
-                                print_debug(" ")
-                                print_debug(" ")
-                                print_debug(" ")
-
                                 evaluation = evaluate_contributions(
-                                    description, answer)
+                                    topic,
+                                    task_description, answer)
                                 print_debug(f"Evaluación: {evaluation}")
                             break
                 last_revision = latest_revision

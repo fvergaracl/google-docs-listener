@@ -1,20 +1,8 @@
-import spacy
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.metrics.pairwise import cosine_similarity
+from sentence_transformers import SentenceTransformer, util
 from utils import print_debug
 
-# Cargar el modelo de lenguaje de spaCy
-nlp = spacy.load('es_core_news_md')
 
-
-def preprocess_text(text):
-    doc = nlp(text)
-    tokens = [
-        token.lemma_ for token in doc if not token.is_stop and not token.is_punct]
-    return ' '.join(tokens)
-
-
-def evaluate_contributions(task_description, contributions):
+def evaluate_contributions(topic, task_description, contributions):
     print_debug(" ")
     print_debug(" ")
     print_debug('Evaluating contributions...')
@@ -25,24 +13,30 @@ def evaluate_contributions(task_description, contributions):
     print_debug(" ")
     print_debug(" ")
     print_debug('Preprocessing text...')
-    # Preprocesar el texto de la tarea y los aportes
-    preprocessed_task = preprocess_text(task_description)
-    preprocessed_contributions = [preprocess_text(
-        contribution) for contribution in contributions]
-
-    # Vectorizar el texto usando TF-IDF
-    vectorizer = TfidfVectorizer()
-    tfidf_matrix = vectorizer.fit_transform(
-        [preprocessed_task] + preprocessed_contributions)
-
-    # Calcular la similitud del coseno entre la tarea y cada aporte
-    cosine_similarities = cosine_similarity(
-        tfidf_matrix[0:1], tfidf_matrix[1:]).flatten()
-
-    # Evaluar y mostrar la relevancia de cada aporte
+    # Cargar el modelo preentrenado
+    model = SentenceTransformer('paraphrase-MiniLM-L6-v2')
     results = []
-    for i, contribution in enumerate(contributions):
-        relevance_score = cosine_similarities[i]
-        results.append((contribution, relevance_score))
+    # Definir las frases
+    for contribution in contributions:
+        print_debug(f"contribution: {contribution}")
+        # Generar las representaciones de los textos
+        embedding_task = model.encode(task_description, convert_to_tensor=True)
+        embedding_response = model.encode(contribution, convert_to_tensor=True)
+
+        # Calcular la similitud de coseno entre las dos frases
+        similarity = util.pytorch_cos_sim(
+            embedding_task, embedding_response).item()
+
+        # Interpretar el resultado
+        # Convertir a porcentaje para facilitar la interpretación
+        similarity_score = similarity * 10
+        results.append({
+            "topic": topic,
+            "task": task_description,
+            "contribution": contribution,
+            "score": similarity_score
+        })
+
+        print_debug(f"similarity_score: {similarity_score}")
 
     return results
